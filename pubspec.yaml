@@ -1,0 +1,67 @@
+name: healthyfast
+description: HealthyFast — fasting tracker with zone guidance for phone and Wear OS.
+version: 2.0.0+226
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  shared_preferences: ^2.3.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_local_notifications: ^22.2.0
+  timezone: ^0.11.1
+  intl: ^0.20.3
+  cupertino_icons: ^1.0.8
+  health: 13.3.1
+  in_app_purchase: ^3.2.0
+  watch_connectivity: ^0.2.1
+  device_info_plus: ^12.1.0
+  # Diktering av måltider ("What did you eat?"-feltet)
+  speech_to_text: ^7.0.0
+  # "Rate the app"-dialog etter første fullførte faste (åpner Play Store)
+  in_app_review: 2.0.12
+  # Dynamisk versjon + build number i Settings
+  # Låst pga. transitiv konflikt: package_info_plus >=10.1.0 krever win32
+  # ^6.0.1, mens device_info_plus <13.0.0 (som health 13.3.1 krever) krever
+  # win32 ^5.11.0. Kan bumpes igjen når health slipper device_info_plus 13.x.
+  package_info_plus: ^8.3.1
+  # Foto av måltid (spike): kamera/galleri → Nano-beskrivelse → estimat
+  image_picker: 1.2.3
+  # Cache av Matvaretabellen (næringsinnsikter i Insights)
+  path_provider: ^2.1.4
+  # Åpne formvideoer (YouTube-søk) fra øvelsesveiledningen
+  url_launcher: 6.3.2
+  # Crown/rotary-scrolling på Wear OS (Pixel Watch m.fl.) — pakken er
+  # discontinued oppstrøms, ingen nyere versjon finnes.
+  wearable_rotary: ^2.0.1
+  # Cloud sync (premium) — Firebase Auth + Firestore-speil av Hive-boksene.
+  # Versjoner speiler VinoKeep (samme dev-miljø).
+  firebase_core: ^4.10.0
+  cloud_firestore: ^6.5.0
+  firebase_auth: ^6.5.2
+  google_sign_in: ^7.2.0
+  # Stabil sync-id på records (Firestore-dok-id)
+  uuid: ^4.5.3
+  cloud_functions: ^6.3.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.12
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "new icon.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+  assets:
+    - new icon.png

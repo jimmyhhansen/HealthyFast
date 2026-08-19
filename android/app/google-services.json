@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "1093411081699",
+    "project_id": "healthyfast-f1f5a",
+    "storage_bucket": "healthyfast-f1f5a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1093411081699:android:074529b92f4bc94382e4d6",
+        "android_client_info": {
+          "package_name": "co.healthyfast"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1093411081699-an43b6bdag3c6hp0g91afgt2effkh8eu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "co.healthyfast",
+            "certificate_hash": "b52a84990260774e42767a67cd79fab66488824f"
+          }
+        },
+        {
+          "client_id": "1093411081699-hsso3o9k0523u2oftl00t5lk5op54qtm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "co.healthyfast",
+            "certificate_hash": "0da109f936c3a7e5231a96393e6dce87bc2249e2"
+          }
+        },
+        {
+          "client_id": "1093411081699-ohdo6espes9pcgnt2tgrb8d0ilp9rhks.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "co.healthyfast",
+            "certificate_hash": "1b4982eefd4bbd23c4b8235e35e5531057f06ccd"
+          }
+        },
+        {
+          "client_id": "1093411081699-vdgk4akso28ttfsnqu4gvldq69rparrt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDD3TNcmLJ9z92QlH6EmCPADDzuWeUinwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1093411081699-vdgk4akso28ttfsnqu4gvldq69rparrt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

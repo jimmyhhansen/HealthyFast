@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wear OS branded launch (API 21+): 48dp app icon centered on solid black.
+     drawable-v21 is the variant actually used on Wear (minSdk 26), so it must
+     carry the branded splash too — not just the base drawable/ version. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/black" />
+    <item
+        android:width="48dp"
+        android:height="48dp"
+        android:gravity="center">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_icon" />
+    </item>
+</layer-list>

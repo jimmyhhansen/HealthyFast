@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Cloud Backup (Premium) — lib/services/cloud_backup_service.dart
+    // mirrors fasts/meals/weights/workouts under users/{uid}/{collection}.
+    // Only the signed-in owner may ever read, write or delete their own
+    // subtree; no other authenticated user (anonymous or real) can touch
+    // another uid's data. Cloud Backup always requires a real Google
+    // sign-in (see CloudBackupService.signIn / isSignedIn), so an
+    // anonymous session can never match a uid with real backup data here
+    // — but the rule doesn't rely on that; uid equality alone is enough.
+    match /users/{uid} {
+      allow read, write, delete: if isOwner(uid);
+
+      match /fasts/{docId}    { allow read, write, delete: if isOwner(uid); }
+      match /meals/{docId}    { allow read, write, delete: if isOwner(uid); }
+      match /weights/{docId}  { allow read, write, delete: if isOwner(uid); }
+      match /workouts/{docId} { allow read, write, delete: if isOwner(uid); }
+    }
+
+    // Cloud AI abuse-prevention bookkeeping (see functions/index.js,
+    // enforceUsageCap). Written exclusively by the Cloud Function's Admin
+    // SDK, which always bypasses these rules — the app itself never reads
+    // or writes them directly. Denied explicitly so the intent is
+    // unambiguous rather than relying on Firestore's default-deny for
+    // unmatched paths.
+    match /ai_config/{docId}       { allow read, write: if false; }
+    match /ai_usage/{docId}        { allow read, write: if false; }
+    match /ai_usage_global/{docId} { allow read, write: if false; }
+    match /quota_hits/{docId}      { allow read, write: if false; }
+  }
+}

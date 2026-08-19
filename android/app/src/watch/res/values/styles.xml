@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Watch-flavor themes: force a black window background so the branded
+     splash (black + 48dp icon) and the window behind the Flutter UI are
+     always black, regardless of the system light/dark setting. Overrides
+     the same-named styles from the phone/main source set on the watch build. -->
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

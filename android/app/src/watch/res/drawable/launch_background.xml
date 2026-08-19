@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wear OS branded launch: 48dp app icon centered on a solid black
+     background, per the Wear "launch with branding" quality guideline.
+     This flavor-specific file overrides the phone launch_background on the
+     watch build. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/black" />
+    <item
+        android:width="48dp"
+        android:height="48dp"
+        android:gravity="center">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_icon" />
+    </item>
+</layer-list>

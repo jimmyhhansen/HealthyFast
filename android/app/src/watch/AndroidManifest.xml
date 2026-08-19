@@ -1,0 +1,98 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Wear OS bundle only: marks this build as a watch app -->
+    <uses-feature android:name="android.hardware.type.watch" android:required="true"/>
+
+    <!-- FALLBACK (aktivert): for maksimal pålitelighet av ongoing-indikatoren
+         bruker vi en Foreground Service. Dette sikrer at indikatoren vises
+         på urskiven selv om app-prosessen blir drept.
+         Krever specialUse-deklarasjon i Play Console. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+
+    <!-- Voice meal logging on the watch (speech_to_text) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+    <application>
+        <!-- Meal logging needs the paired phone (it runs the on-device AI),
+             but fasting works standalone, so keep standalone = true. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
+        <service
+            android:name=".FastingForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Fasting timer started explicitly by the user, surfaced as a Wear OS ongoing activity on the watch face. No background data processing."/>
+        </service>
+
+        <!-- Independent from FastingForegroundService: a workout and a fast
+             can both be running at once, each with its own ongoing-activity
+             chip/timer. -->
+        <service
+            android:name=".WorkoutForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Workout session started explicitly by the user, surfaced as a Wear OS ongoing activity on the watch face. No background data processing."/>
+        </service>
+
+        <!-- Wear OS watch face complications -->
+        <!-- Elapsed text self-updates; the RANGED_VALUE ring value needs the
+             periodic refresh (every 10 min) to keep the progress current. -->
+        <service
+            android:name=".ElapsedFastComplicationService"
+            android:exported="true"
+            android:label="Fast: time elapsed"
+            android:icon="@mipmap/ic_launcher"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="RANGED_VALUE,SHORT_TEXT"/>
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="600"/>
+        </service>
+
+        <!-- Hours-remaining text is computed per refresh (not self-updating),
+             so request periodic updates every 10 min. RANGED_VALUE adds a
+             progress ring with the zone colour ramp around the text. -->
+        <service
+            android:name=".RemainingFastComplicationService"
+            android:exported="true"
+            android:label="Fast: hours remaining"
+            android:icon="@mipmap/ic_launcher"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="RANGED_VALUE,SHORT_TEXT"/>
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="600"/>
+        </service>
+
+        <!-- Wear Tile: shows the active fast and references the ongoing activity. -->
+        <service
+            android:name=".FastingTileService"
+            android:exported="true"
+            android:label="HF: Fasting"
+            android:icon="@drawable/ic_tile_fasting"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER"/>
+            </intent-filter>
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/tile_preview"/>
+        </service>
+    </application>
+</manifest>

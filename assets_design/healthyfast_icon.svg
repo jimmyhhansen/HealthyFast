@@ -1,0 +1,56 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#26A69A"/>
+      <stop offset="1" stop-color="#66BB6A"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E3F2EC"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background squircle -->
+  <rect x="0" y="0" width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  <ellipse cx="330" cy="240" rx="420" ry="300" fill="#FFFFFF" opacity="0.06"/>
+
+  <!-- subtle timer ring -->
+  <circle cx="512" cy="512" r="442" fill="none" stroke="#FFFFFF" stroke-width="22" opacity="0.14"/>
+  <circle cx="512" cy="512" r="442" fill="none" stroke="#FFFFFF" stroke-width="22" opacity="0.55"
+          stroke-linecap="round" stroke-dasharray="760 2017" transform="rotate(-90 512 512)"/>
+
+  <!-- torso silhouette: V-taper -->
+  <path d="M 252 210
+           C 344 258, 434 278, 512 278
+           C 590 278, 680 258, 772 210
+           C 782 300, 768 386, 740 470
+           C 712 554, 678 650, 662 740
+           C 652 792, 646 826, 644 852
+           L 380 852
+           C 378 826, 372 792, 362 740
+           C 346 650, 312 554, 284 470
+           C 256 386, 242 300, 252 210 Z"
+        fill="#FFFFFF" opacity="0.26"/>
+
+  <!-- pecs: wide, rounded-bottom plates -->
+  <path d="M 332 312
+           L 496 312
+           L 496 388
+           C 496 424, 462 442, 414 442
+           C 366 442, 332 420, 332 384 Z" fill="url(#body)"/>
+  <path d="M 528 312
+           L 692 312
+           L 692 384
+           C 692 420, 658 442, 610 442
+           C 562 442, 528 424, 528 388 Z" fill="url(#body)"/>
+
+  <!-- six pack, tapering toward the waist -->
+  <rect x="348" y="486" width="148" height="100" rx="34" fill="url(#body)"/>
+  <rect x="528" y="486" width="148" height="100" rx="34" fill="url(#body)"/>
+
+  <rect x="366" y="612" width="130" height="96" rx="34" fill="url(#body)"/>
+  <rect x="528" y="612" width="130" height="96" rx="34" fill="url(#body)"/>
+
+  <rect x="384" y="734" width="112" height="92" rx="42" fill="url(#body)"/>
+  <rect x="528" y="734" width="112" height="92" rx="42" fill="url(#body)"/>
+</svg>

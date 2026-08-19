@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HealthyFast — Privacy Policy</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+         max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1a2a28; }
+  h1 { color: #26A69A; }
+  h2 { margin-top: 1.8em; color: #1a4a44; }
+  a { color: #26A69A; }
+  .muted { color: #6e8280; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<h1>Privacy Policy for HealthyFast</h1>
+<p class="muted">Last updated: 6 August 2026</p>
+
+<p>
+HealthyFast ("the app") is developed by Northern App Dev ("we", "us"). This
+policy explains what data the app handles and how. By default HealthyFast keeps
+your data on your own device — no account needed for the free fasting timer.
+Two Premium features send data to Google Cloud and require signing in with
+your Google account: Cloud AI (sharper meal and program estimates) and Cloud
+Backup (keeps a copy of your history tied to your Google account). Both
+require your explicit consent and are described below.
+</p>
+
+<h2>Data the app stores on your device</h2>
+<p>
+HealthyFast stores the following information locally on your phone or watch so
+the app can work:
+</p>
+<ul>
+  <li>Your fasting sessions (start time, end time, chosen protocol and goal).</li>
+  <li>Meals you log (description, calories, and macronutrients you enter or that are estimated).</li>
+  <li>Your app settings and premium entitlement status.</li>
+</ul>
+<p>
+This data stays on your device unless you turn on Cloud AI or Cloud Backup below.
+We do not access it otherwise.
+</p>
+
+<h2>AI meal estimation</h2>
+<p>
+By default, when you ask the app to estimate a meal's or workout program's
+content, the description or photo is processed by an on-device AI model
+(Google's Gemini Nano via Android ML Kit) entirely on your device. Nothing is
+sent to us or anyone else for this.
+</p>
+<p>
+On phones that don't support the on-device model, or if you turn on "Always
+use cloud AI" (Premium), the same request is instead sent to Google's Gemini
+model through a Cloud Function we operate — only after you've explicitly
+consented in-app <strong>and</strong> signed in with your Google account.
+We require sign-in (not just anonymous access) purely to stop the shared
+daily AI quota from being abused by scripted, account-less requests; it's
+the same account already used for Cloud Backup if you have that enabled. We
+do not store your meal descriptions or photos on our servers: they are
+forwarded to Google's Vertex AI to generate a response, which is returned to
+your device and then discarded server-side. We do keep a daily usage count
+tied to your account, used only for this rate-limiting. You can turn Cloud
+AI off, or sign out, at any time in Settings → Cloud & AI.
+</p>
+
+<h2>Health Connect</h2>
+<p>
+If you choose to enable it, HealthyFast can write your completed fasts and logged
+meals to Android Health Connect, so other health apps you use can access them. This
+is optional and requires your explicit permission. You can revoke this permission at
+any time in Health Connect or your device settings. We do not read data from Health
+Connect beyond what is needed to confirm and write these records, and we do not
+transmit Health Connect data to our own servers.
+</p>
+
+<h2>Wear OS companion</h2>
+<p>
+If you use the Wear OS version, your fasting state is synchronised between your own
+phone and your own paired watch using Google's Wearable Data Layer. This data travels
+only between your devices.
+</p>
+
+<h2>Purchases</h2>
+<p>
+HealthyFast offers a one-time purchase and a subscription, processed by Google Play
+Billing. We do not receive or store your payment details; these are handled by Google.
+The app stores only whether your premium access is active.
+</p>
+
+<h2>Cloud backup (Premium)</h2>
+<p>
+If you're a Premium subscriber and turn on Cloud Backup, HealthyFast signs you in
+with your Google account and uploads your fasting sessions, logged meals, weight
+entries and workouts to Google Firestore, so you can restore them on a new device.
+This is off by default and only starts once you explicitly enable it in Settings →
+Cloud & AI.
+</p>
+<p>
+Turning the Cloud Backup switch off disconnects your account but does <strong>not</strong>
+delete data already uploaded. To permanently delete it, use "Delete cloud backup data"
+in Settings → Cloud & AI — this removes your fasts, meals, weights and workouts from
+our servers immediately and cannot be undone. Data stored locally on your device is
+never affected by this.
+</p>
+
+<h2>Data retention and deletion</h2>
+<p>
+<strong>Local data:</strong> Your fasting sessions, logged meals, settings, and
+premium status stay stored locally for as long as the app is installed. We never
+receive a copy of this unless you turn on Cloud AI or Cloud Backup above, so there
+is no additional retention period on our side for local-only data.
+</p>
+<p>
+<strong>Cloud AI:</strong> We don't store your meal descriptions or photos — see
+"AI meal estimation" above for exactly what is and isn't kept.
+</p>
+<p>
+<strong>Cloud Backup:</strong> Uploaded records are retained until you delete them
+(see "Cloud backup" above) or contact us to request deletion on your behalf.
+</p>
+<p>
+<strong>Deletion:</strong> You can delete your data at any time:
+</p>
+<ul>
+  <li>Uninstall the app — this immediately and permanently deletes all HealthyFast data stored on your device.</li>
+  <li>Clear app data without uninstalling, via Android Settings → Apps → HealthyFast → Storage & cache → Clear storage.</li>
+  <li>Delete individual records written to Health Connect via the Health Connect app (Health Connect → Data and access → HealthyFast).</li>
+  <li>Delete your cloud backup at any time via Settings → Cloud & AI → Delete cloud backup data.</li>
+</ul>
+<p>
+If you need help with any of this, or want us to remove the Cloud AI usage
+counter tied to your account, contact us at the email below.
+</p>
+
+<h2>Device information</h2>
+<p>
+The app reads basic device characteristics locally (for example, whether it is running
+on a watch) to show the correct interface. This information is not collected or shared.
+</p>
+
+<h2>Children</h2>
+<p>
+HealthyFast is not directed at children under 13 and we do not knowingly collect any
+information from children.
+</p>
+
+<h2>Changes to this policy</h2>
+<p>
+We may update this policy from time to time. The "last updated" date above reflects the
+most recent changes.
+</p>
+
+<h2>Contact</h2>
+<p>
+If you have questions about this policy or your data, contact us at:
+<br>
+Northern App Dev — <a href="mailto:northernappdev@gmail.com">northernappdev@gmail.com</a>
+</p>
+
+</body>
+</html>
