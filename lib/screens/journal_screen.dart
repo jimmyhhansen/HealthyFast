@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -101,7 +102,9 @@ class _JournalScreenState extends State<JournalScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
-              tooltip: 'Sync from Health Connect',
+              tooltip: Platform.isAndroid
+                  ? 'Sync from Health Connect'
+                  : 'Sync from Apple Health',
               onPressed: () => _syncFromHealth(context, fp),
             ),
             settingsAction(context),
@@ -114,6 +117,11 @@ class _JournalScreenState extends State<JournalScreen> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
+          // Explicit tag: this screen is a bottom-nav tab kept mounted
+          // alongside the others via IndexedStack (see root_screen.dart),
+          // so the default (shared) FAB hero tag collides with the other
+          // tabs' FABs — "multiple heroes share the same tag" at runtime.
+          heroTag: 'fab_journal',
           tooltip: 'Log on this day',
           elevation: 0,
           onPressed: () => _logOnSelectedDay(context, fp),
@@ -142,10 +150,13 @@ class _JournalScreenState extends State<JournalScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text('Sync from Health Connect',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                  Platform.isAndroid
+                      ? 'Sync from Health Connect'
+                      : 'Sync from Apple Health',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 8),

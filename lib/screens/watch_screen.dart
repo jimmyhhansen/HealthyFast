@@ -14,6 +14,7 @@ import '../services/meal_sync_queue.dart';
 import '../services/notification_service.dart';
 import '../services/ongoing_activity_service.dart';
 import '../widgets/wear_scroll_view.dart';
+import '../widgets/wear_number_picker.dart';
 import 'watch_workout_flow.dart';
 
 /// Compact UI for Wear OS: progress ring, elapsed time, current zone,
@@ -864,62 +865,42 @@ class _WatchWorkoutScreenState extends State<_WatchWorkoutScreen> {
                 fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
-          // kg stepper — minus pinned far left, plus far right, value
-          // centered between them. Fixed width keeps it symmetric.
+          // Tap the numbers to spin them with the crown. This was a
+          // minus/plus pair moving 2.5 kg per tap on a ~30px target, which
+          // meant a dozen jabs at arm's length to change warm-up weight.
           SizedBox(
             width: side * 0.80,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  iconSize: 30,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(44, 44),
-                  ),
-                  icon: const Icon(Icons.remove_circle_outline,
-                      color: Colors.white70),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    if (isImperial) {
-                      var lbs = e.kg / 0.45359237;
-                      lbs = (lbs - 5).clamp(0, 2000);
-                      setState(() => e.kg = lbs * 0.45359237);
-                    } else {
-                      setState(() => e.kg = (e.kg - 2.5).clamp(0, 999));
-                    }
-                  },
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () async {
+                HapticFeedback.selectionClick();
+                final picked = await showWearWeightPicker(
+                  context,
+                  exerciseName: e.name,
+                  kg: e.kg,
+                  isImperial: isImperial,
+                );
+                if (picked == null || !mounted) return;
+                setState(() => e.kg = picked);
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade900,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '$weightLabel × ${e.reps}',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold),
-                    ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '$weightLabel × ${e.reps}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
-                IconButton(
-                  iconSize: 30,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(44, 44),
-                  ),
-                  icon: const Icon(Icons.add_circle_outline,
-                      color: Colors.white70),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    if (isImperial) {
-                      var lbs = e.kg / 0.45359237;
-                      lbs += 5;
-                      setState(() => e.kg = lbs * 0.45359237);
-                    } else {
-                      setState(() => e.kg += 2.5);
-                    }
-                  },
-                ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 8),

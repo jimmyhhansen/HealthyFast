@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import 'debug_log_service.dart';
 
@@ -29,6 +30,7 @@ class MealEstimatorService {
   static const _channel = MethodChannel('healthyfast/meal');
 
   static Future<NanoStatus> checkStatus() async {
+    if (!Platform.isAndroid) return NanoStatus.unavailable;
     try {
       final s = await _channel.invokeMethod<String>('checkNanoStatus');
       final status = switch (s) {
@@ -48,6 +50,7 @@ class MealEstimatorService {
 
   /// Downloads the model. Returns true when it completes.
   static Future<bool> downloadModel() async {
+    if (!Platform.isAndroid) return false;
     try {
       return await _channel.invokeMethod<bool>('downloadNano') ?? false;
     } catch (_) {
@@ -60,6 +63,7 @@ class MealEstimatorService {
   /// or unparseable. Each entry is (Norwegian food name, grams).
   static Future<List<(String, double)>?> extractFoods(
       String description) async {
+    if (!Platform.isAndroid) return null;
     try {
       final raw = await _channel.invokeMethod<String>(
         'extractFoods',
@@ -98,6 +102,7 @@ class MealEstimatorService {
   /// or text entry otherwise. On-device only — this method itself never
   /// leaves the phone.
   static Future<String?> describePhoto(String path) async {
+    if (!Platform.isAndroid) return null;
     await DebugLogService.log(
         'MealAI', 'describePhoto: on-device call starting for $path');
     try {
@@ -122,6 +127,7 @@ class MealEstimatorService {
 
   /// Returns an estimate, or null if the model output could not be parsed.
   static Future<MealEstimate?> estimate(String description) async {
+    if (!Platform.isAndroid) return null;
     final raw = await _channel.invokeMethod<String>(
       'estimateMeal',
       {'description': description},

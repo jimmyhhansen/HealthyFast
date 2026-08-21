@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/fast_record.dart';
@@ -81,6 +85,52 @@ class CloudBackupService {
     final res = await _auth.signInWithCredential(credential);
     return res.user!;
   }
+
+  /// Durable Apple sign-in (iOS only — App Store Review Guideline 4.8
+  /// requires offering it wherever Google sign-in is offered). Uses the
+  /// nonce flow: the raw nonce goes to Sign in with Apple, its SHA-256 goes
+  /// in the request, and Firebase verifies the identity token against the
+  /// raw nonce we hand it here.
+  Future<User> signInWithApple() async {
+    final rawNonce = _generateNonce();
+    final nonce = _sha256ofString(rawNonce);
+    final appleCredential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: nonce,
+    );
+    final idToken = appleCredential.identityToken;
+    if (idToken == null) {
+      throw StateError('Apple sign-in returned no identity token.');
+    }
+    // Firebase's Apple OAuth verification needs the authorization code as
+    // `accessToken` here, not just the identity token — without it Apple's
+    // side of the handshake completes fine (Face ID succeeds, we get a
+    // valid identityToken), but Firebase's signInWithCredential() rejects
+    // it with [firebase_auth/invalid-credential] "Invalid OAuth response
+    // from apple.com". This is the one field that was missing.
+    final credential = OAuthProvider('apple.com').credential(
+      idToken: idToken,
+      rawNonce: rawNonce,
+      accessToken: appleCredential.authorizationCode,
+    );
+    final res = await _auth.signInWithCredential(credential);
+    return res.user!;
+  }
+
+  /// Cryptographically random nonce for the Apple sign-in flow.
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+        length, (_) => charset[random.nextInt(charset.length)]).join();
+  }
+
+  String _sha256ofString(String input) =>
+      sha256.convert(utf8.encode(input)).toString();
 
   Future<void> signOut() async {
     try {

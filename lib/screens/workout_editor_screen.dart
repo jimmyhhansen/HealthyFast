@@ -7,6 +7,7 @@ import '../providers/fasting_provider.dart';
 import '../providers/training_provider.dart';
 import 'program_library_screen.dart';
 import 'workout_session_screen.dart' show showExerciseGuide;
+import '../widgets/number_wheel_picker.dart';
 
 class WorkoutEditorScreen extends StatefulWidget {
   final WorkoutRecord workout;
@@ -355,14 +356,14 @@ class _WorkoutEditorScreenState extends State<WorkoutEditorScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: InkWell(
-              onTap: () => _editValue(e, setIdx, editKg: true),
+              onTap: () => _editValue(e, setIdx),
               child: Text('${s.kg == s.kg.roundToDouble() ? s.kg.round() : s.kg.toStringAsFixed(1)} kg', textAlign: TextAlign.center),
             ),
           ),
           const Text('×'),
           Expanded(
             child: InkWell(
-              onTap: () => _editValue(e, setIdx, editKg: false),
+              onTap: () => _editValue(e, setIdx),
               child: Text('${s.reps} reps', textAlign: TextAlign.center),
             ),
           ),
@@ -375,42 +376,22 @@ class _WorkoutEditorScreenState extends State<WorkoutEditorScreen> {
     );
   }
 
-  Future<void> _editValue(_EditableExercise e, int i, {required bool editKg}) async {
+  Future<void> _editValue(_EditableExercise e, int i) async {
     final s = e.sets[i];
-    var kg = s.kg;
-    var reps = s.reps;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          title: Text('${e.name} — set ${i + 1}'),
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: editKg
-                ? [
-                    IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => setLocal(() => kg = (kg - 0.5).clamp(0, 999))),
-                    Text('${kg == kg.roundToDouble() ? kg.round() : kg.toStringAsFixed(1)} kg', style: Theme.of(ctx).textTheme.titleLarge),
-                    IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => setLocal(() => kg += 0.5)),
-                  ]
-                : [
-                    IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: reps > 0 ? () => setLocal(() => reps--) : null),
-                    Text('$reps reps', style: Theme.of(ctx).textTheme.titleLarge),
-                    IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => setLocal(() => reps++)),
-                  ],
-          ),
-          actions: [
-            FilledButton(
-                onPressed: () {
-                  setState(() {
-                    s.kg = kg;
-                    s.reps = reps;
-                  });
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Set')),
-          ],
-        ),
-      ),
+    // Same wheel sheet as the live session screen. This screen has only ever
+    // shown kilos, so the wheel counts kilos too rather than quietly changing
+    // the unit under an imperial user's existing logs.
+    final picked = await showSetPicker(
+      context,
+      title: '${e.name} — set ${i + 1}',
+      kg: s.kg,
+      reps: s.reps,
+      isImperial: false,
     );
+    if (picked == null || !mounted) return;
+    setState(() {
+      s.kg = picked.kg;
+      s.reps = picked.reps;
+    });
   }
 }

@@ -67,6 +67,11 @@ class _ProgramsManagerScreenState extends State<ProgramsManagerScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Workout programs')),
       floatingActionButton: FloatingActionButton(
+        // Explicit tag — pushed via Navigator so unlikely to coexist with a
+        // bottom-nav tab's FAB, but a unique tag costs nothing and avoids
+        // ever hitting the "multiple heroes share the same tag" issue (see
+        // meals_dashboard_screen.dart).
+        heroTag: 'fab_program_editor',
         tooltip: 'Create program',
         elevation: 0,
         onPressed: () => _editProg(),

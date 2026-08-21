@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -147,7 +148,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.cloud_sync_outlined),
             title: const Text('Cloud & AI'),
-            subtitle: const Text('Backup, Health Connect and Meal AI'),
+            subtitle: Text(Platform.isAndroid
+                ? 'Backup, Health Connect and Meal AI'
+                : 'Backup, Apple Health and Cloud AI'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -171,39 +174,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.watch_rounded),
-            title: const Text('Install on Watch'),
-            subtitle: const Text('Open Play Store on your paired Wear OS watch'),
-            trailing: const Icon(Icons.open_in_new_rounded, size: 20),
-            onTap: () async {
-              // Wear OS sync is a premium feature.
-              if (!context.read<PurchaseProvider>().isPremium) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PaywallScreen()),
-                );
-                return;
-              }
-              try {
-                final count = await WearInstallService.installOnWatch();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(count > 0 ? 'Notification sent' : 'No paired watches found'),
-                    ),
+          if (Platform.isAndroid) ...[
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.watch_rounded),
+              title: const Text('Install on Watch'),
+              subtitle: const Text('Open Play Store on your paired Wear OS watch'),
+              trailing: const Icon(Icons.open_in_new_rounded, size: 20),
+              onTap: () async {
+                // Wear OS sync is a premium feature.
+                if (!context.read<PurchaseProvider>().isPremium) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PaywallScreen()),
                   );
+                  return;
                 }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to open Play Store: $e')),
-                  );
+                try {
+                  final count = await WearInstallService.installOnWatch();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(count > 0 ? 'Notification sent' : 'No paired watches found'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to open Play Store: $e')),
+                    );
+                  }
                 }
-              }
-            },
-          ),
+              },
+            ),
+          ],
           const Divider(),
           ListTile(
             leading: Icon(Icons.workspace_premium, color: pp.isPremium ? Colors.amber : null),
@@ -227,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.star_outline_rounded),
-            title: const Text('Rate on Google Play'),
+            title: Text(Platform.isAndroid ? 'Rate on Google Play' : 'Rate on the App Store'),
             subtitle: const Text('HealthyFast is an indie project — your review means a lot!'),
             trailing: const Icon(Icons.open_in_new_rounded, size: 20),
             onTap: () async {
@@ -238,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Could not open Play Store: $e')),
+                    SnackBar(content: Text('Could not open store listing: $e')),
                   );
                 }
               }

@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import '../services/cloud_ai_consent_service.dart';
 import '../services/cloud_backup_service.dart';
@@ -52,16 +53,54 @@ Future<AiPath> resolveAiPath(
 Future<bool> ensureCloudSignIn(BuildContext context) async {
   if (CloudBackupService.instance.isSignedIn) return true;
   try {
-    await CloudBackupService.instance.signIn();
+    if (Platform.isIOS) {
+      final provider = await _chooseSignInProviderSheet(context);
+      if (provider == null) return false;
+      if (provider == 'apple') {
+        await CloudBackupService.instance.signInWithApple();
+      } else {
+        await CloudBackupService.instance.signIn();
+      }
+    } else {
+      await CloudBackupService.instance.signIn();
+    }
     return true;
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google sign-in is required for Cloud AI: $e')),
+        SnackBar(content: Text('Sign-in is required for Cloud AI: $e')),
       );
     }
     return false;
   }
+}
+
+/// Google/Apple picker shown before sign-in on iOS (Apple requires this
+/// choice wherever Google sign-in is offered — App Store Review Guideline
+/// 4.8). Returns 'google', 'apple', or null if dismissed.
+Future<String?> _chooseSignInProviderSheet(BuildContext context) {
+  return showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.g_mobiledata_rounded),
+            title: const Text('Continue with Google'),
+            onTap: () => Navigator.pop(ctx, 'google'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.apple_rounded),
+            title: const Text('Continue with Apple'),
+            onTap: () => Navigator.pop(ctx, 'apple'),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Shows the one-time (well — until they change their mind in Settings)

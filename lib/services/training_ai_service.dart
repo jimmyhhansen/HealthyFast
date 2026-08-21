@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import '../services/cloud_ai_service.dart';
 import '../services/custom_programs_service.dart';
@@ -22,6 +23,7 @@ class TrainingAiService {
   /// [ExerciseGuides.muscles] — the curated, guide-backed set — so every
   /// exercise the AI names actually has step-by-step instructions.
   static Future<Program?> generateProgram(String description) async {
+    if (!Platform.isAndroid) return null;
     final vocab = ExerciseGuides.muscles.keys.toList();
     String? raw;
     try {

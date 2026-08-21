@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../providers/purchase_provider.dart';
 import '../services/cloud_ai_service.dart';
 import '../services/meal_estimator_service.dart';
 import '../services/training_ai_service.dart';
 import '../services/training_programs.dart' show Program;
 import '../widgets/cloud_ai_consent_sheet.dart';
+import 'paywall_screen.dart';
 import 'program_editor_screen.dart';
 
 /// Describe a workout in free text (or speak it) and let on-device AI
@@ -98,6 +101,19 @@ class _ProgramAiScreenState extends State<ProgramAiScreen> {
   }
 
   Future<void> _generate() async {
+    // AI program generation is a premium feature (cloud calls cost money
+    // and the on-device model is a paid entitlement too). This screen is
+    // reachable from more than one place in the nav (Train tab's Programs
+    // Library card skips the paywall gate on the way in), so the check has
+    // to live here, right before the actual AI call, not upstream.
+    if (!context.read<PurchaseProvider>().isPremium) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PaywallScreen()),
+      );
+      return;
+    }
+
     final description = _descriptionController.text.trim();
     if (description.isEmpty) {
       _snack('Describe what you want to train first.');

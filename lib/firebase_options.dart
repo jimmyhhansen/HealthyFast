@@ -26,10 +26,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -58,5 +55,16 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1093411081699',
     projectId: 'healthyfast-f1f5a',
     storageBucket: 'healthyfast-f1f5a.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDA8Ye9PMpzJSi2xPyCNvAfRsRbpK9A7Zg',
+    appId: '1:1093411081699:ios:ac5ff56e4f546e1882e4d6',
+    messagingSenderId: '1093411081699',
+    projectId: 'healthyfast-f1f5a',
+    storageBucket: 'healthyfast-f1f5a.firebasestorage.app',
+    androidClientId: '1093411081699-an43b6bdag3c6hp0g91afgt2effkh8eu.apps.googleusercontent.com',
+    iosClientId: '1093411081699-0rtct5jtid7vjogno1b8ei9pt6lvghbb.apps.googleusercontent.com',
+    iosBundleId: 'co.healthyfast',
   );
 }

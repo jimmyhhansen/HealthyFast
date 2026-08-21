@@ -84,3 +84,6 @@ ios/Runner/GoogleService-Info.plist.bak
 # --- Diverse ---
 .gitignore.bak
 ios.backup.*/
+
+# Samlemappe for ferdige byggefiler (build_*_mac.command)
+dist/

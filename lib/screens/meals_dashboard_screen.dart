@@ -111,6 +111,11 @@ class _MealsDashboardScreenState extends State<MealsDashboardScreen> {
         actions: [settingsAction(context)],
       ),
       floatingActionButton: FloatingActionButton(
+        // Explicit tag: bottom-nav tab kept mounted via IndexedStack (see
+        // root_screen.dart) alongside the other tabs' own FABs, which all
+        // share the default hero tag otherwise — causes a "multiple heroes
+        // share the same tag" crash-log at runtime (non-fatal but noisy).
+        heroTag: 'fab_meals',
         tooltip: 'Log a meal',
         // Theme's primaryContainer (the look the FAB had by default) — the
         // Fast tab's Stop button uses the same, so the two primary actions

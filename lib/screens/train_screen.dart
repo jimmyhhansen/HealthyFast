@@ -47,6 +47,8 @@ class TrainScreen extends StatelessWidget {
         actions: [settingsAction(context)],
       ),
       floatingActionButton: FloatingActionButton(
+        // Explicit tag — see the matching comment in meals_dashboard_screen.dart.
+        heroTag: 'fab_train',
         tooltip: 'Log training',
         elevation: 0,
         onPressed: () {
@@ -74,7 +76,15 @@ class TrainScreen extends StatelessWidget {
               color: scheme.primary,
               title: 'Programs Library',
               subtitle: 'Browse splits and choose your training plan.',
-              onTap: () => _pickProgram(context, tp),
+              // This card used to skip straight to _pickProgram, bypassing
+              // the paywall entirely — a free user could adopt any bundled
+              // program, build a custom one, or (before the fix in
+              // program_ai_screen.dart) generate one with AI, all for free.
+              // Gate it the same way the "Choose a program" button below is.
+              onTap: () {
+                if (!_premiumOrPaywall(context)) return;
+                _pickProgram(context, tp);
+              },
             ),
             const SizedBox(height: 12),
 

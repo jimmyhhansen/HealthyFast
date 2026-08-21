@@ -1,8 +1,11 @@
 # HealthyFast — iOS Launch Checklist
 
-**Status per 2026-08-19:** iOS er ikke påbegynt. Prosjektet har ingen `ios/`-mappe,
-Firebase har ingen iOS-app, og fire MethodChannels + notifikasjonstjenesten er
-Android-only. Alt under er *fra scratch*.
+**Status per 2026-08-20:** `ios/` er generert, appen bygger og har kjørt på en
+fysisk iPhone. Seksjon 4 (kodefiks) er nå gjort i Dart-koden. Gjenstår:
+`flutterfire configure` må kjøres på nytt (firebase_options.dart manglet
+fortsatt ekte iOS-config og krasjet appen ved oppstart), `pod install` for den
+nye `sign_in_with_apple`-pakken, ikongenerering, og all manuell verifisering på
+enheten (seksjon 8's TestFlight-liste er ikke rørt).
 
 **Motstykket til [`LAUNCH_CHECKLIST.md`](LAUNCH_CHECKLIST.md)** (som er 100 % Play Console).
 
@@ -105,16 +108,16 @@ const android = AndroidInitializationSettings('@mipmap/ic_launcher');
 const settings = InitializationSettings(android: android);   // ← ingen iOS
 ```
 
-- [ ] Legg til `DarwinInitializationSettings` i `InitializationSettings`
-- [ ] `requestPermissions()` (linje ~313) og `requestNotificationsPermission()`
-      (linje ~303) resolver kun `AndroidFlutterLocalNotificationsPlugin` → returnerer
-      `null` på iOS, så tillatelse blir aldri spurt om. Legg til
-      `IOSFlutterLocalNotificationsPlugin`-grenen.
-- [ ] `AndroidNotificationChannel` (linje ~38) og exact-alarm-logikken er
-      Android-konsepter — pakk dem inn i `if (Platform.isAndroid)`.
-- [ ] `scheduleExactNotifications` finnes ikke på iOS. iOS bruker
-      `UNCalendarNotificationTrigger` og har **maks 64 planlagte varsler** per app.
-      Sjekk at faste-milepælsvarslene ikke overskrider dette.
+- [x] Lagt til `DarwinInitializationSettings` i `InitializationSettings`
+- [x] `requestPermissions()` og `requestNotificationsPermission()` har nå en
+      `IOSFlutterLocalNotificationsPlugin`-gren (`requestPermissions(alert:
+      badge: sound:)`)
+- [x] `AndroidNotificationChannel`-oppsettet er allerede trygt på iOS
+      (`resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()`
+      returnerer `null` der og short-circuiter med `?.`) — ingen egen guard
+      nødvendig
+- [x] `scheduleMilestones()` har nå et budsjett på 62 varsler på iOS (holder
+      1 slot ledig til den daglige påminnelsen, under Apples grense på 64)
 - [ ] Tidssonen er hardkodet til `Europe/Oslo` (linje ~23). Fungerer, men vurder
       `flutter_timezone` før internasjonal lansering.
 
@@ -127,7 +130,11 @@ const settings = InitializationSettings(android: android);   // ← ingen iOS
 `main.dart` fanger dette i en `try`/`catch` (best-effort), så appen starter — men
 **cloud sync, Cloud AI og Google-innlogging er døde**.
 
-- [ ] Fikses av `flutterfire configure` i seksjon 5.
+- [ ] Fikses av `flutterfire configure` i seksjon 5. **Status 2026-08-20:**
+      filen var fortsatt på throw-stub-versjonen (`flutterfire configure` ble
+      aldri kjørt ferdig med et gyldig resultat lagret) — appen krasjet ved
+      oppstart på ekte iPhone med nettopp denne feilen. Kjør kommandoen i
+      seksjon 5 på nytt.
 
 ### 4.3 MethodChannels — kun implementert i Kotlin
 
@@ -140,28 +147,30 @@ Alle fire kaster `MissingPluginException` på iOS:
 | `healthyfast/wear` | `services/complication_service.dart`, `ongoing_activity_service.dart`, `wear_install_service.dart` | Wear OS tiles/complications | Ikke relevant — må no-op'e |
 | `healthyfast/nav` | `screens/watch_screen.dart` | Wear OS-navigasjon | Ikke relevant — må no-op'e |
 
-- [ ] **`healthyfast/meal` er den kritiske.** Gemini Nano finnes ikke på iOS.
-      Sørg for at `NanoStatus` alltid er `unavailable` på iOS og at
-      Cloud AI-veien (Firebase Functions) brukes for *alle* iOS-brukere.
+- [x] **`healthyfast/meal` er den kritiske.** Alle offentlige metoder i
+      `meal_estimator_service.dart` og `training_ai_service.dart` returnerer nå
+      trygt (`NanoStatus.unavailable`/`null`/`false`) på `!Platform.isAndroid`
+      i stedet for å kalle den ikke-eksisterende native kanalen.
       🔗 Se `project_healthyfast_firebase_anonymous_auth.md` i prosjektminnet:
       **anonym auth må være påslått i Firebase Console**, ellers feiler Cloud AI.
-      Det gjelder 100 % av iOS-brukerne, ikke bare noen telefoner.
-- [ ] `screens/cloud_ai_settings_screen.dart` viser "Tap to download the on-device
-      AI model". Skjul hele Nano-raden når `!Platform.isAndroid`.
+      Det gjelder 100 % av iOS-brukerne, ikke bare noen telefoner. **Ikke
+      verifisert ennå — sjekk Firebase Console.**
+- [x] `screens/cloud_ai_settings_screen.dart` skjuler nå hele "On-device AI"-
+      seksjonen når `!Platform.isAndroid`.
 - [x] `health_sync_service.dart:179` er allerede trygg: den native kanalen er
       gated på Android, og fallbacken bruker `_health.getHealthDataFromTypes` med
       `HealthDataType.STEPS`. Denne virker som den skal på iOS. ✅
-- [ ] ⚠️ Sjekk derimot `HealthDataType.SLEEP_SESSION` (linje ~151). Det er et
-      Health Connect-begrep; på iOS heter søvnkategoriene `SLEEP_ASLEEP`,
-      `SLEEP_AWAKE`, `SLEEP_IN_BED`, `SLEEP_DEEP`, `SLEEP_REM`. Verifiser mot
-      `health 13.3.1` at `SLEEP_SESSION` faktisk er støttet på iOS — hvis ikke vil
-      `requestAuthorization` for hele `_readTypes`-lista feile, og du mister
-      *alle* lesetillatelsene, ikke bare søvn.
-- [ ] Wear-tjenestene: legg inn tidlig `if (!Platform.isAndroid) return;` slik at de
-      ikke kaster.
-- [ ] `wearable_rotary` og `watch_connectivity` har ingen iOS-implementasjon.
-      Verifiser at `pod install` og bygget går gjennom. Hvis ikke: gjør dem til
-      betingede avhengigheter eller stub dem ut.
+- [x] `HealthDataType.SLEEP_SESSION` byttet ut med en platform-betinget
+      `_sleepTypes`-getter: `SLEEP_ASLEEP` + `SLEEP_DEEP` + `SLEEP_REM` på iOS,
+      `SLEEP_SESSION` uendret på Android. Disse HealthKit-kategoriene overlapper
+      ikke i tid innenfor én kilde (en natt er enten enkle "asleep"-prøver eller
+      Core/Deep/REM-prøver, aldri begge), så summeringen i
+      `readSleepMinutesPerDay()` bør ikke dobbelttelle — **ikke testet på ekte
+      søvndata ennå**, verifiser tallene ser fornuftige ut når du tester.
+- [x] Wear-tjenestene (`complication_service.dart`, `ongoing_activity_service.dart`,
+      `wear_install_service.dart`) har nå tidlig `if (!Platform.isAndroid) return;`.
+- [x] `wearable_rotary` og `watch_connectivity`: `pod install` og Xcode-bygget gikk
+      gjennom uten feil relatert til disse — ingen endring nødvendig.
 
 ### 4.4 Google Sign-In
 
@@ -169,28 +178,54 @@ Alle fire kaster `MissingPluginException` på iOS:
 `GoogleSignIn.instance.initialize(serverClientId: ...)`.
 
 - [ ] På iOS trengs også `clientId` (iOS OAuth-klienten fra `GoogleService-Info.plist`)
+      — avhenger av at `flutterfire configure` er kjørt på nytt (seksjon 5)
 - [ ] `CFBundleURLTypes` med `REVERSED_CLIENT_ID` i `Info.plist` (seksjon 5)
-- [ ] ⚠️ **App Store-regel 4.8:** tilbyr du tredjeparts-innlogging (Google), *må* du
-      også tilby **Sign in with Apple**. Dette er en hyppig avvisningsgrunn.
-      → Legg til `sign_in_with_apple`-pakken + Apple-provider i Firebase Auth.
+- [x] ⚠️ **App Store-regel 4.8:** tilbyr du tredjeparts-innlogging (Google), *må* du
+      også tilby **Sign in with Apple**. `sign_in_with_apple` + `crypto` lagt til i
+      `pubspec.yaml`, `CloudBackupService.signInWithApple()` (nonce-flyt mot
+      Firebase `OAuthProvider('apple.com')`) lagt til, og en Google/Apple-velger
+      vises nå før innlogging på iOS (`cloud_ai_settings_screen.dart` og
+      `cloud_ai_consent_sheet.dart`). **Ikke kjørt `pod install` eller testet
+      end-to-end ennå.** Husk også: "Sign in with Apple"-capability i Xcode
+      (seksjon 6) og Apple-provider i Firebase Console (seksjon 5).
 
 ### 4.5 Appikon
 
-`pubspec.yaml` har `flutter_launcher_icons: ios: false`.
-
-- [ ] Sett `ios: true`, kjør `dart run flutter_launcher_icons`
-- [ ] iOS-ikoner kan **ikke ha alfakanal/gjennomsiktighet** — Apple avviser opplastingen.
-      Sjekk `new icon.png` og legg på hvit/farget bakgrunn om nødvendig.
+- [x] `flutter_launcher_icons: ios: true` satt i `pubspec.yaml` (verifisert at
+      `new icon.png` er opak/kvadratisk før dette ble slått på — IKKE bruk
+      `assets_design/healthyfast_icon_1024.png`, den har gjennomsiktighet).
+- [ ] `dart run flutter_launcher_icons` **ikke kjørt ennå** — gjør dette etter
+      `flutter pub get` (se "Neste steg" nederst i denne seksjonen)
 - [ ] Ikonet må være 1024×1024 uten avrundede hjørner (iOS runder selv)
 
 ### 4.6 Diverse
 
-- [ ] `main.dart:57` `_detectWatch()` returnerer `false` når `!Platform.isAndroid` — OK
-- [ ] Søk gjennom UI-tekst etter "Play Store", "Google Fit", "Health Connect",
-      "Wear OS" og bytt til iOS-ekvivalenter (`in_app_review` åpner riktig butikk
-      automatisk, men *teksten din* gjør det ikke)
+- [x] `main.dart:57` `_detectWatch()` returnerer `false` når `!Platform.isAndroid` — OK
+- [x] UI-tekst gjennomgått i `settings_screen.dart` (Install on Watch skjult,
+      "Rate on Google Play"/"Cloud & AI"-tekst platform-bevisst),
+      `journal_screen.dart` (Sync-tooltip og bunnark-tittel) og
+      `cloud_ai_settings_screen.dart` (`_healthAppName`: "Health Connect" vs
+      "Apple Health") og `fitness_goal.dart` (Wear OS-capability skjult).
+      Ikke uttømmende — resten av appen er ikke grepet gjennom for gjenværende
+      "Wear OS"/"Google Fit"-referanser.
 - [ ] `url_launcher` mot YouTube-formvideoer: legg til `LSApplicationQueriesSchemes`
       hvis du vil åpne YouTube-appen i stedet for Safari
+
+**Neste steg nå (2026-08-20), i rekkefølge:**
+
+```bash
+flutter pub get                       # henter sign_in_with_apple + crypto
+dart run flutter_launcher_icons       # genererer iOS-ikonsettet (4.5)
+flutterfire configure \
+  --project=healthyfast-f1f5a \
+  --platforms=ios \
+  --ios-bundle-id=co.healthyfast      # regenererer firebase_options.dart (4.2/5) — kjør fra prosjektroten
+cd ios && pod install && cd ..        # ny pod: sign_in_with_apple
+flutter run -d 00008101-001905D82628801E
+```
+
+Sjekk også Firebase Console → Authentication → Sign-in method: Anonymous,
+Google **og Apple** påslått (seksjon 5) før du tester innlogging.
 
 ---
 

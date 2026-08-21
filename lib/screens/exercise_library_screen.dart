@@ -62,6 +62,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       // Goes straight to the add-exercise form — no detour through Workout
       // Settings.
       floatingActionButton: FloatingActionButton.extended(
+        // Explicit tag — see the matching comment in program_editor_screen.dart.
+        heroTag: 'fab_exercise_library',
         onPressed: () => _addExercise(initialName: _query.trim().isEmpty ? null : _query.trim()),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add New'),

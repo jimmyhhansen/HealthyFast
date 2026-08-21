@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 
 /// Drives the Wear OS Ongoing Activity for an active fast.
@@ -20,6 +21,7 @@ class OngoingActivityService {
     required int startMs,
     required int goalHours,
   }) async {
+    if (!Platform.isAndroid) return;
     try {
       await _channel.invokeMethod('startOngoing', {
         'startMs': startMs,
@@ -31,6 +33,7 @@ class OngoingActivityService {
   }
 
   static Future<void> stop() async {
+    if (!Platform.isAndroid) return;
     try {
       await _channel.invokeMethod('stopOngoing');
     } catch (_) {
@@ -47,6 +50,7 @@ class OngoingActivityService {
     required int startMs,
     required String title,
   }) async {
+    if (!Platform.isAndroid) return;
     try {
       await _channel.invokeMethod('startOngoingWorkout', {
         'startMs': startMs,
@@ -58,6 +62,7 @@ class OngoingActivityService {
   }
 
   static Future<void> stopWorkout() async {
+    if (!Platform.isAndroid) return;
     try {
       await _channel.invokeMethod('stopOngoingWorkout');
     } catch (_) {
@@ -67,6 +72,7 @@ class OngoingActivityService {
 
   /// Triggers a refresh of the Wear OS Tile.
   static Future<void> refreshTiles() async {
+    if (!Platform.isAndroid) return;
     try {
       await _channel.invokeMethod('refreshTiles');
     } catch (_) {

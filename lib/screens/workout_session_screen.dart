@@ -11,6 +11,7 @@ import '../providers/fasting_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/training_provider.dart';
 import '../services/exercise_guides.dart';
+import '../widgets/number_wheel_picker.dart';
 
 /// Guided program workout with a live session timer. The session state
 /// LIVES IN TrainingProvider — backing out of this screen keeps the
@@ -521,7 +522,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           Expanded(
             flex: 2,
             child: InkWell(
-              onTap: () => _editValue(e, i, editKg: true, isImperial: isImperial),
+              onTap: () => _editValue(e, i, isImperial: isImperial),
               child: Text(_kg(s.kg, isImperial: isImperial),
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -530,7 +531,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
           Expanded(
             flex: 2,
             child: InkWell(
-              onTap: () => _editValue(e, i, editKg: false, isImperial: isImperial),
+              onTap: () => _editValue(e, i, isImperial: isImperial),
               child: Text('${s.reps}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -560,130 +561,25 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   }
 
   Future<void> _editValue(ActiveExercise e, int i,
-      {required bool editKg, required bool isImperial}) async {
+      {required bool isImperial}) async {
     final s = e.sets[i];
-    var kg = s.kg;
-    var reps = s.reps;
-
-    final controller = TextEditingController(
-        text: editKg ? (isImperial ? _kg(kg, isImperial: true) : _kg(kg)) : reps.toString());
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          title: Text('${e.name} — set ${i + 1}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true, signed: false),
-                decoration: InputDecoration(
-                  labelText: editKg ? (isImperial ? 'Weight (lbs)' : 'Weight (kg)') : 'Reps',
-                  suffixText: editKg ? (isImperial ? 'lbs' : 'kg') : 'reps',
-                  border: const OutlineInputBorder(),
-                  filled: true,
-                ),
-                onChanged: (val) {
-                  final n = double.tryParse(val.replaceAll(',', '.'));
-                  if (n != null) {
-                    if (editKg) {
-                      kg = isImperial ? n * 0.45359237 : n;
-                    } else {
-                      reps = n.round();
-                    }
-                  }
-                },
-                onSubmitted: (val) {
-                  final n = double.tryParse(val.replaceAll(',', '.'));
-                  if (n != null) {
-                    setState(() {
-                      if (editKg) {
-                        s.kg = isImperial ? n * 0.45359237 : n;
-                      } else {
-                        s.reps = n.round();
-                      }
-                    });
-                    context.read<TrainingProvider>().persistSession();
-                    Navigator.pop(ctx);
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton.filledTonal(
-                    icon: const Icon(Icons.remove_circle_outline),
-                    onPressed: () {
-                      setLocal(() {
-                        if (editKg) {
-                          if (isImperial) {
-                            var lbs = kg / 0.45359237;
-                            lbs = (lbs - 1).clamp(0, 2000);
-                            kg = lbs * 0.45359237;
-                            controller.text = _kg(kg, isImperial: true);
-                          } else {
-                            kg = (kg - 0.5).clamp(0, 999);
-                            controller.text = _kg(kg);
-                          }
-                        } else {
-                          if (reps > 0) reps--;
-                          controller.text = reps.toString();
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 24),
-                  IconButton.filledTonal(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: () {
-                      setLocal(() {
-                        if (editKg) {
-                          if (isImperial) {
-                            var lbs = kg / 0.45359237;
-                            lbs += 1;
-                            kg = lbs * 0.45359237;
-                            controller.text = _kg(kg, isImperial: true);
-                          } else {
-                            kg += 0.5;
-                            controller.text = _kg(kg);
-                          }
-                        } else {
-                          reps++;
-                          controller.text = reps.toString();
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-                onPressed: () {
-                  setState(() {
-                    s.kg = kg;
-                    s.reps = reps;
-                  });
-                  context.read<TrainingProvider>().persistSession();
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Set')),
-          ],
-        ),
-      ),
+    // One sheet holding a weight wheel and a reps wheel, so tapping either
+    // number lands in the same place. The dialog this replaced edited only
+    // whichever number you happened to tap, and moving it meant either the
+    // keyboard or one tap per 0.5 kg.
+    final picked = await showSetPicker(
+      context,
+      title: '${e.name} — set ${i + 1}',
+      kg: s.kg,
+      reps: s.reps,
+      isImperial: isImperial,
     );
+    if (picked == null || !mounted) return;
+    setState(() {
+      s.kg = picked.kg;
+      s.reps = picked.reps;
+    });
+    context.read<TrainingProvider>().persistSession();
   }
 }
 

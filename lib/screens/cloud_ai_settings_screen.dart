@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/fasting_provider.dart';
@@ -61,6 +62,12 @@ class _CloudAiSettingsScreenState extends State<CloudAiSettingsScreen> {
       _cloudEmail = CloudBackupService.instance.accountEmail;
     });
   }
+
+  /// Platform-neutral name for the phone's health app — "Health Connect" on
+  /// Android, "Apple Health" on iOS (the `health` package backs both under
+  /// one API).
+  String get _healthAppName =>
+      Platform.isAndroid ? 'Health Connect' : 'Apple Health';
 
   String get _nanoSubtitle => switch (_nanoStatus) {
         NanoStatus.available => 'Ready — powers meal estimates and voice logging',
@@ -189,15 +196,64 @@ class _CloudAiSettingsScreenState extends State<CloudAiSettingsScreen> {
     setState(() => _cloudBusy = true);
     try {
       if (value) {
-        await CloudBackupService.instance.signIn();
+        if (Platform.isIOS) {
+          final provider = await _chooseSignInProvider();
+          if (provider == null) return;
+          if (provider == 'apple') {
+            await CloudBackupService.instance.signInWithApple();
+          } else {
+            await CloudBackupService.instance.signIn();
+          }
+        } else {
+          await CloudBackupService.instance.signIn();
+        }
         await CloudBackupService.instance.backupNow(fp);
       } else {
         await CloudBackupService.instance.signOut();
+      }
+    } catch (e) {
+      // Previously uncaught: signInWithApple() (or signIn()) throwing here
+      // — e.g. the still-unresolved firebase_auth/invalid-credential case —
+      // propagated past this function with no `catch`, so in a release
+      // build (TestFlight, no attached debugger) it just looked like
+      // nothing happened after Face ID. Surface it instead.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not turn on Cloud Backup: $e')),
+        );
       }
     } finally {
       await _refreshCloud();
       if (mounted) setState(() => _cloudBusy = false);
     }
+  }
+
+  /// Google/Apple picker shown before sign-in on iOS (Apple requires this
+  /// choice wherever Google sign-in is offered — App Store Review Guideline
+  /// 4.8). Returns 'google', 'apple', or null if dismissed.
+  Future<String?> _chooseSignInProvider() {
+    return showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.g_mobiledata_rounded),
+              title: const Text('Continue with Google'),
+              onTap: () => Navigator.pop(ctx, 'google'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.apple_rounded),
+              title: const Text('Continue with Apple'),
+              onTap: () => Navigator.pop(ctx, 'apple'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Distinct from [_toggleCloud]'s "off" path: turning the switch off
@@ -247,17 +303,19 @@ class _CloudAiSettingsScreenState extends State<CloudAiSettingsScreen> {
       appBar: AppBar(title: const Text('Cloud & AI')),
       body: ListView(
         children: [
-          _sectionLabel('On-device AI'),
-          ListTile(
-            leading: _nanoBusy
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                : Icon(Icons.auto_awesome, color: _nanoStatus == NanoStatus.available ? Colors.green : null),
-            title: const Text('Meal AI'),
-            subtitle: Text(_nanoSubtitle),
-            trailing: _nanoStatus == NanoStatus.available ? const Icon(Icons.check_circle, color: Colors.green) : null,
-            onTap: _handleNanoTap,
-          ),
-          const Divider(),
+          if (Platform.isAndroid) ...[
+            _sectionLabel('On-device AI'),
+            ListTile(
+              leading: _nanoBusy
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(Icons.auto_awesome, color: _nanoStatus == NanoStatus.available ? Colors.green : null),
+              title: const Text('Meal AI'),
+              subtitle: Text(_nanoSubtitle),
+              trailing: _nanoStatus == NanoStatus.available ? const Icon(Icons.check_circle, color: Colors.green) : null,
+              onTap: _handleNanoTap,
+            ),
+            const Divider(),
+          ],
           _sectionLabel('Cloud AI'),
           ListTile(
             leading: Icon(Icons.cloud_outlined,
@@ -293,11 +351,11 @@ class _CloudAiSettingsScreenState extends State<CloudAiSettingsScreen> {
             onChanged: _handleAlwaysCloudToggle,
           ),
           const Divider(),
-          _sectionLabel('Health Connect'),
+          _sectionLabel(_healthAppName),
           SwitchListTile(
             secondary: const Icon(Icons.favorite_outline),
-            title: const Text('Sync to Health Connect'),
-            subtitle: const Text('Mirror logs to Android Health Connect'),
+            title: Text('Sync to $_healthAppName'),
+            subtitle: Text('Mirror logs to $_healthAppName'),
             value: _healthSyncEnabled,
             onChanged: _healthBusy ? null : _toggleHealthSync,
           ),
@@ -305,7 +363,7 @@ class _CloudAiSettingsScreenState extends State<CloudAiSettingsScreen> {
             leading: _importBusy
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.cloud_download_outlined),
-            title: const Text('Fetch from Health Connect'),
+            title: Text('Fetch from $_healthAppName'),
             subtitle: const Text('Import logs from other apps'),
             onTap: _importBusy ? null : _importFromHealth,
           ),

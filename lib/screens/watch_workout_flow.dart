@@ -13,6 +13,7 @@ import '../services/meal_sync_queue.dart';
 import '../services/ongoing_activity_service.dart';
 import '../services/training_programs.dart';
 import '../widgets/wear_scroll_view.dart';
+import '../widgets/wear_number_picker.dart';
 
 /// Guided workout logging on the watch, fully standalone:
 ///  1. pick the workout (day in the split),
@@ -669,33 +670,69 @@ class _SetEditorState extends State<_SetEditor> {
   late double _kg = widget.initialKg;
   late int _reps = widget.initialReps;
 
-  Widget _stepperRow(String value, VoidCallback onMinus, VoidCallback onPlus) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          iconSize: 30,
-          icon: const Icon(Icons.remove_circle_outline,
-              color: Colors.white70),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            onMinus();
-          },
+  Future<void> _pickWeight() async {
+    HapticFeedback.selectionClick();
+    // The watch has always logged in kilos, so the wheel counts kilos.
+    final picked = await showWearWeightPicker(
+      context,
+      exerciseName: widget.exerciseName,
+      kg: _kg,
+      isImperial: false,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _kg = picked);
+  }
+
+  Future<void> _pickReps() async {
+    HapticFeedback.selectionClick();
+    final picked = await showWearRepsPicker(
+      context,
+      exerciseName: widget.exerciseName,
+      reps: _reps,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _reps = picked);
+  }
+
+  /// One tappable value, full width. Replaces the old minus/value/plus row:
+  /// those steppers moved 2.5 kg (or one rep) per tap on a ~30px target, so
+  /// a normal warm-up jump was a dozen taps at arm's length between sets.
+  /// The whole row is now the target, and it opens a crown-driven wheel.
+  Widget _valueRow(String label, String value, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade900,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
+              const SizedBox(width: 10),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        Text(value,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold)),
-        IconButton(
-          iconSize: 30,
-          icon: const Icon(Icons.add_circle_outline, color: Colors.white70),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            onPlus();
-          },
-        ),
-      ],
+      ),
     );
   }
 
@@ -716,18 +753,14 @@ class _SetEditorState extends State<_SetEditor> {
           'Set ${widget.setNo}',
           style: const TextStyle(color: Colors.white54, fontSize: 11),
         ),
-        const SizedBox(height: 4),
-        _stepperRow(
-          '${_kg == _kg.roundToDouble() ? _kg.round() : _kg.toStringAsFixed(1)} kg',
-          () => setState(() => _kg = (_kg - 2.5).clamp(0, 999)),
-          () => setState(() => _kg += 2.5),
-        ),
-        _stepperRow(
-          '$_reps reps',
-          () => setState(() => _reps = (_reps - 1).clamp(0, 99)),
-          () => setState(() => _reps++),
-        ),
         const SizedBox(height: 6),
+        _valueRow(
+          'Weight',
+          '${_kg == _kg.roundToDouble() ? _kg.round() : _kg.toStringAsFixed(1)} kg',
+          _pickWeight,
+        ),
+        _valueRow('Reps', '$_reps', _pickReps),
+        const SizedBox(height: 8),
         FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: Colors.green.shade800,

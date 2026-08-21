@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -28,7 +29,14 @@ class NotificationService {
     }
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const settings = InitializationSettings(android: android);
+    // Don't auto-prompt here — requestPermissions() asks explicitly once the
+    // user reaches the relevant screen, same flow as Android.
+    const ios = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    const settings = InitializationSettings(android: android, iOS: ios);
     await _notifications.initialize(
       settings: settings,
       onDidReceiveNotificationResponse: _onTap,
@@ -137,8 +145,19 @@ class NotificationService {
 
     debugPrint('[NOTIF] Current time: $now');
 
+    // iOS caps an app at 64 pending local notifications total, and the
+    // daily reminder scheduled above already uses one slot. Android has no
+    // such limit, so the cap only applies there.
+    final iosBudget = Platform.isIOS ? 62 : null;
+    var iosScheduledCount = 0;
+    bool budgetLeft() => iosBudget == null || iosScheduledCount < iosBudget;
+
     // Standard zones
     for (int i = 1; i < kFastingZones.length; i++) {
+      if (!budgetLeft()) {
+        debugPrint('[NOTIF] iOS notification budget reached, skipping remaining zones.');
+        break;
+      }
       final zone = kFastingZones[i];
       if (disabled.contains(zone.name)) {
         debugPrint('[NOTIF] Zone ${zone.name} is disabled by user.');
@@ -146,7 +165,7 @@ class NotificationService {
       }
 
       final scheduledTime = startTime.add(Duration(hours: zone.fromHour));
-      
+
       if (scheduledTime.isAfter(now)) {
         debugPrint('[NOTIF] Scheduling Zone: ${zone.name} at $scheduledTime');
         await _schedule(
@@ -156,6 +175,7 @@ class NotificationService {
           scheduledDate: scheduledTime,
           payload: jsonEncode({'type': 'zone_info', 'zone': zone.name}),
         );
+        iosScheduledCount++;
       } else {
         debugPrint('[NOTIF] Skipping Zone: ${zone.name} (already in the past: $scheduledTime)');
       }
@@ -164,6 +184,10 @@ class NotificationService {
     // Custom milestones
     int idCounter = 200;
     for (final entry in custom.entries) {
+      if (!budgetLeft()) {
+        debugPrint('[NOTIF] iOS notification budget reached, skipping remaining custom milestones.');
+        break;
+      }
       final name = entry.key;
       final hours = entry.value;
       if (disabled.contains(name)) continue;
@@ -177,11 +201,12 @@ class NotificationService {
           body: 'You have been fasting for $hours hours! Read more...',
           scheduledDate: scheduledTime,
         );
+        iosScheduledCount++;
       }
     }
 
     // Goal reached notification
-    if (!disabled.contains('Goal Reached')) {
+    if (!disabled.contains('Goal Reached') && budgetLeft()) {
       final goalTime = startTime.add(Duration(hours: goalHours));
       if (goalTime.isAfter(now)) {
         debugPrint('[NOTIF] Scheduling Goal: $goalHours hours at $goalTime');
@@ -191,6 +216,7 @@ class NotificationService {
           body: 'Congratulations! You have reached your fasting goal of $goalHours hours. Read more...',
           scheduledDate: goalTime,
         );
+        iosScheduledCount++;
       }
     }
   }
@@ -253,6 +279,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
         ),
+        iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: await _scheduleMode(),
       matchDateTimeComponents: DateTimeComponents.time,
@@ -283,6 +310,7 @@ class NotificationService {
             priority: Priority.high,
             showWhen: true,
           ),
+          iOS: DarwinNotificationDetails(),
         ),
         androidScheduleMode: mode,
         payload: payload,
@@ -301,6 +329,16 @@ class NotificationService {
   /// ongoing notification and the exact-alarm settings screen from
   /// [requestPermissions] would be intrusive.
   static Future<void> requestNotificationsPermission() async {
+    if (Platform.isIOS) {
+      final ios = _notifications.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      try {
+        await ios?.requestPermissions(alert: true, badge: true, sound: true);
+      } on Exception catch (e) {
+        debugPrint('[NOTIF] iOS requestNotificationsPermission error: $e');
+      }
+      return;
+    }
     final android = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     try {
@@ -311,6 +349,16 @@ class NotificationService {
   }
 
   static Future<void> requestPermissions() async {
+    if (Platform.isIOS) {
+      final ios = _notifications.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      try {
+        await ios?.requestPermissions(alert: true, badge: true, sound: true);
+      } on Exception catch (e) {
+        debugPrint('[NOTIF] iOS requestPermissions error: $e');
+      }
+      return;
+    }
     final android = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     try {
@@ -341,6 +389,12 @@ class NotificationService {
   /// Whether the OS currently allows this app to post notifications.
   /// Returns false if the user denied the POST_NOTIFICATIONS permission.
   static Future<bool> areNotificationsEnabled() async {
+    if (Platform.isIOS) {
+      final ios = _notifications.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      final settings = await ios?.checkPermissions();
+      return settings?.isEnabled ?? false;
+    }
     final android = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     return await android?.areNotificationsEnabled() ?? false;
@@ -365,6 +419,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
         ),
+        iOS: DarwinNotificationDetails(),
       ),
     );
   }

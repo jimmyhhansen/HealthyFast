@@ -143,13 +143,29 @@ class HealthSyncService {
     }
   }
 
-  static const _readTypes = [
-    HealthDataType.NUTRITION,
-    HealthDataType.WEIGHT,
-    HealthDataType.WORKOUT,
-    HealthDataType.STEPS,
-    HealthDataType.SLEEP_SESSION,
-  ];
+  /// Sleep stage types to read. Health Connect (Android) exposes a single
+  /// SLEEP_SESSION record; HealthKit (iOS) has no such type — it reports
+  /// stage-level samples instead, so we read the stages that make up a
+  /// night's sleep. These don't overlap in time within one data source
+  /// (a night is either plain "asleep" samples from simple tracking, or
+  /// Core/Deep/REM samples from staged tracking, never both at once), so
+  /// summing them in [readSleepMinutesPerDay] doesn't double-count.
+  static List<HealthDataType> get _sleepTypes =>
+      defaultTargetPlatform == TargetPlatform.iOS
+          ? const [
+              HealthDataType.SLEEP_ASLEEP,
+              HealthDataType.SLEEP_DEEP,
+              HealthDataType.SLEEP_REM,
+            ]
+          : const [HealthDataType.SLEEP_SESSION];
+
+  static List<HealthDataType> get _readTypes => [
+        HealthDataType.NUTRITION,
+        HealthDataType.WEIGHT,
+        HealthDataType.WORKOUT,
+        HealthDataType.STEPS,
+        ..._sleepTypes,
+      ];
 
   /// Requests READ access for meals, weight, workouts, steps and sleep —
   /// used by the manual "fetch from Health" import. Returns true when
@@ -227,7 +243,7 @@ class HealthSyncService {
     try {
       await _ensureConfigured();
       final points = await _health.getHealthDataFromTypes(
-        types: [HealthDataType.SLEEP_SESSION],
+        types: _sleepTypes,
         startTime: since,
         endTime: DateTime.now(),
       );

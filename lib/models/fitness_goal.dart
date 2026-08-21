@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 
 /// What the user wants HealthyFast to help them with first.
@@ -107,10 +108,11 @@ class AppCapability {
       goal == FitnessGoal.everything || goals.contains(goal);
 }
 
-/// Everything HealthyFast does, ordered roughly by how impressive it is on
-/// first contact. Free capabilities first so the value is real before the
-/// ask.
-const kCapabilities = <AppCapability>[
+/// Everything HealthyFast does except Wear OS and health sync (those two are
+/// platform-dependent — see [kCapabilities]), ordered roughly by how
+/// impressive it is on first contact. Free capabilities first so the value
+/// is real before the ask.
+const _baseCapabilities = <AppCapability>[
   AppCapability(
     icon: Icons.hourglass_full_rounded,
     title: 'Fasting timer & 7 body zones',
@@ -159,20 +161,45 @@ const kCapabilities = <AppCapability>[
       FitnessGoal.metabolicHealth,
     },
   ),
-  AppCapability(
-    icon: Icons.watch_rounded,
-    title: 'Wear OS companion',
-    proof: 'Your fast, your zone and your next set on your wrist, live — no '
-        'phone needed mid-session.',
-    premium: true,
-    goals: {FitnessGoal.buildMuscle, FitnessGoal.metabolicHealth},
-  ),
-  AppCapability(
-    icon: Icons.favorite_rounded,
-    title: 'Health Connect sync',
-    proof: 'Meals, workouts and fasts flow both ways with the rest of your '
-        'health data. Log it once, anywhere.',
-    premium: true,
-    goals: {FitnessGoal.loseFat, FitnessGoal.metabolicHealth},
-  ),
 ];
+
+/// Wear OS companion — Android only, no Apple Watch app in v1 (see
+/// IOS_LAUNCH_CHECKLIST.md section 10).
+const _wearCapability = AppCapability(
+  icon: Icons.watch_rounded,
+  title: 'Wear OS companion',
+  proof: 'Your fast, your zone and your next set on your wrist, live — no '
+      'phone needed mid-session.',
+  premium: true,
+  goals: {FitnessGoal.buildMuscle, FitnessGoal.metabolicHealth},
+);
+
+const _healthCapabilityAndroid = AppCapability(
+  icon: Icons.favorite_rounded,
+  title: 'Health Connect sync',
+  proof: 'Meals, workouts and fasts flow both ways with the rest of your '
+      'health data. Log it once, anywhere.',
+  premium: true,
+  goals: {FitnessGoal.loseFat, FitnessGoal.metabolicHealth},
+);
+
+/// Names Apple Health explicitly rather than a vague "health app" — the
+/// intro/paywall should say plainly what it syncs with.
+const _healthCapabilityIOS = AppCapability(
+  icon: Icons.favorite_rounded,
+  title: 'Apple Health sync',
+  proof: 'Meals, workouts and fasts flow both ways with Apple Health — log '
+      'it once, anywhere.',
+  premium: true,
+  goals: {FitnessGoal.loseFat, FitnessGoal.metabolicHealth},
+);
+
+/// Public, platform-filtered capability list shared by onboarding and the
+/// paywall. No Wear OS card on iOS, and the health-sync card names the
+/// actual app per platform (Health Connect on Android, Apple Health on
+/// iOS) instead of a generic "health app".
+List<AppCapability> get kCapabilities => [
+      ..._baseCapabilities,
+      if (Platform.isAndroid) _wearCapability,
+      Platform.isAndroid ? _healthCapabilityAndroid : _healthCapabilityIOS,
+    ];
